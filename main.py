@@ -111,8 +111,11 @@ def read_data(filenames, mode):
         jc_data = pd.read_csv(filenames['jc'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 47
         jc_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
 
-        jc_data = pd.read_csv(filenames['jc'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 47
-        jc_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+        fret_data = pd.read_csv(filenames['fret'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 1
+        fret_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+
+        saxs_data = pd.read_csv(filenames['saxs'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 37
+        saxs_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
 
         return {
             # property name: Stack(name, back calc data, sigma, mu)
@@ -124,12 +127,13 @@ def read_data(filenames, mode):
             'pre': Stack('pre', pre_data, 0.0001, None),
             'noe': Stack('noe', noe_data, 0.0001, None),
             'jc': Stack('jc', jc_data,
-                        (np.sqrt(0.14), np.sqrt(0.03), np.sqrt(0.08)),
-                        (6.51, -1.76, 1.6)),
-            'fret': Stack('fret', 0.55, 0.02, None),
-            'cs': Stack('cs', pd.read_csv(filenames['cs']), None, None),
-            'saxs': Stack('saxs', pd.read_csv(filenames['saxs']), None, None)
-
+                        {'A': np.sqrt(0.14), 'B': np.sqrt(0.03), 'C':np.sqrt(0.08)},
+                        {'A': 6.51, 'B': -1.76, 'C': 1.6}),
+            'fret': Stack('fret', fret_data, 0.0062, None),
+            'cs': Stack('cs', pd.read_csv(filenames['cs'], header=None, delim_whitespace=True, index_col=0),  #shape: None, 262
+                        {'C': 0.0533, 'CA': 0.04412, 'CB': 0.05163, 'H': 0.01711, 'HA': 0.01231},
+                        None),
+            'saxs': Stack('saxs', saxs_data, 0.00055, None)
         }
 
 
