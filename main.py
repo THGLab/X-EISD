@@ -1,139 +1,138 @@
 import numpy as np
 import pandas as pd
-import os
+import time
 
-abs_path = "../eisd-pkg"
-
-# experimental data file names
-relative_path = os.path.join(abs_path, "experimental_data")
-EXP_DATA_FILENAME = {
-    'rh'  : None,  #20.3
-    'rdc' : os.path.join(relative_path, "drksh3_exp_rdcs.txt"),
-    'pre' : os.path.join(relative_path, "drksh3_pres.txt"),
-    'noe' : os.path.join(relative_path, "8AAC_noes.txt"),
-    'jc'  : os.path.join(relative_path, "drksh3_JC_exp_clean.txt"),
-    'fret': None, # 0.55
-    'cs'  : os.path.join(relative_path, "drksh3_CS_exp_mod.txt"),
-    'saxs': os.path.join(relative_path, "unfolded_saxs_exp.txt")
-}
-
-# back calculated data file names
-relative_path = os.path.join(abs_path, "back_calc_data/Trades")
-TRADES_BC_DATA_FILENAME = {
-    'rh'  : os.path.join(relative_path, "drksh3_RH_data.txt"),
-    'rdc' : os.path.join(relative_path, "drksh3_RDCs_structRDCs.txt"),
-    'pre' : os.path.join(relative_path, "drksh3_PREs_structdists.txt"),
-    'noe' : os.path.join(relative_path, "drksh3_NOEs_structdists.txt"),
-    'jc'  : os.path.join(relative_path, "drksh3_JC_alphas.txt"),
-    'fret': os.path.join(relative_path, "drksh3_FRET_structEFF.txt"),
-    'cs'  : os.path.join(relative_path, "drksh3_CS_structdata.txt"),
-    'saxs': os.path.join(relative_path, "drksh3_SAXS_data.txt")
-}
-
-relative_path = os.path.join(abs_path, "back_calc_data/mixpool")
-MIXED_BC_DATA_FILENAME = {
-    'rh'  : os.path.join(relative_path, "drksh3_mixpool_RH.txt"),
-    'rdc' : os.path.join(relative_path, "drksh3_mixpool_RDCs.txt"),
-    'pre' : os.path.join(relative_path, "drksh3_mixpool_PREs.txt"),
-    'noe' : os.path.join(relative_path, "drksh3_mixpool_NOEs.txt"),
-    'jc'  : os.path.join(relative_path, "drksh3_mixpool_JC.txt"),
-    'fret': os.path.join(relative_path, "drksh3_mixpool_FRET.txt"),
-    'cs'  : os.path.join(relative_path, "drksh3_mixpool_CS.txt"),
-    'saxs': os.path.join(relative_path, "drksh3_mixpool_SAXS.txt")
-}
-
-relative_path = os.path.join(abs_path, "back_calc_data/ENSEMBLE_PED")
-ENSEMBLE_BC_DATA_FILENAME = {
-    'rh'  : os.path.join(relative_path, "drksh3_ENSEMBLE_RH.txt"),
-    'rdc' : os.path.join(relative_path, "drksh3_ENSEMBLE_RDCs.txt"),
-    'pre' : os.path.join(relative_path, "drksh3_ENSEMBLE_PREs.txt"),
-    'noe' : os.path.join(relative_path, "drksh3_ENSEMBLE_NOEs.txt"),
-    'jc'  : os.path.join(relative_path, "drksh3_ENSEMBLE_JC.txt"),
-    'fret': os.path.join(relative_path, "drksh3_ENSEMBLE_FRET.txt"),
-    'cs'  : os.path.join(relative_path, "drksh3_ENSEMBLE_CS.txt"),
-    'saxs': os.path.join(relative_path, "drksh3_ENSEMBLE_SAXS.txt")
-}
-
-class Stack():
-    def __init__(self, name, data, sigma=None, mu=None):
-        self.name = name
-        self.data = data
-        self.sigma = sigma
-        self.mu = mu
-
-    def get_idx(self):
-        pass
+from parser import read_data
+from meta import meta_data
 
 
+def calc_opt_params(beta,exp,exp_sig,sig):
+    assert beta.shape == exp.shape
+    ratio = (sig**2.0)/(exp_sig**2.0)
+    opt_params = (ratio*(exp-beta))/(1.0+ratio)
+    return opt_params
 
 
-def read_data(filenames, mode):
+def normal_loglike(x, mu, sig):
+    exp_val = -((x - mu)** 2.0)/(2.0 *(sig ** 2.0))
+    pre_exp = 1.0/(np.sqrt(2.0*np.pi*(sig ** 2.0)))
+    logp = np.log(pre_exp*np.exp(exp_val))
+    return logp
+
+
+def calc_score(beta,exp,exp_sig,sig,opt_params):
+    f_q = normal_loglike(opt_params,0,sig)
+    err = exp - opt_params - beta
+    f_err = normal_loglike(err,0,exp_sig)
+    f = f_q + f_err
+    f_comps = [f_q, f_err]
+    return f, f_comps
+
+
+def saxs_optimization_ensemble(exp_data, bc_data, indices):
+    # prepare data
+    exp_saxs = exp_data['saxs'].data['value'].values  # shape: (37,)
+    exp_sigma = exp_data['saxs'].data['error'].values  # shape: (37,)
+    bc_ensemble = bc_data['saxs'].data.values[indices, :]  # shape: (100, 37)
+    bc_saxs = np.mean(bc_ensemble, axis=0)  # shape: (37,)
+
+    # optimization
+    opt_params = calc_opt_params(bc_saxs, exp_saxs, exp_sigma, bc_data['saxs'].sigma)
+    f, f_comps = calc_score(bc_saxs, exp_saxs, exp_sigma, bc_data['saxs'].sigma, opt_params)
+
+    sse_saxs = np.sum((exp_saxs - bc_saxs) ** 2.0)
+    total_score_saxs = np.sum(f)
+
+    return sse_saxs, total_score_saxs, bc_saxs
+
+
+def cs_optimization_ensemble(exp_data, bc_data, indices):
+    # prepare data
+    exp_cs = exp_data['cs'].data['value'].values  # shape: (262,)
+    exp_sigma = exp_data['cs'].data['error'].values  # shape: (262,)
+    atom_types = exp_data['cs'].data['atomname'].values # shape: (262,)
+
+    bc_ensemble = bc_data['cs'].data.values[indices, :]  # shape: (100, 262)
+    bc_cs = np.mean(bc_ensemble, axis=0)  # shape: (262,)
+    bc_sigma = np.array([bc_data['cs'].sigma[atom_type] for atom_type in atom_types])  # shape: (262,)
+
+    # optimization
+    opt_params = calc_opt_params(bc_cs, exp_cs, exp_sigma, bc_sigma)
+    f, f_comps = calc_score(bc_cs, exp_cs, exp_sigma, bc_sigma, opt_params)
+
+    sse = np.sum((exp_cs - bc_cs) ** 2.0)
+    total_score = np.sum(f)
+
+    return sse, total_score, bc_cs
+
+
+def fret_optimization_ensemble(exp_data, bc_data, indices):
+    # prepare data
+    exp = exp_data['fret'].data  # scalar
+    exp_sigma = exp_data['fret'].sigma  # scalar
+
+    bc_ensemble = bc_data['fret'].data.values[indices, :]  # shape: (100, 1)
+    bc = np.mean(bc_ensemble, axis=0)  # shape: (1,)
+    bc_sigma = bc_data['fret'].sigma # scalar
+
+    # optimization
+    opt_params = calc_opt_params(bc, exp, exp_sigma, bc_sigma)
+    f, f_comps = calc_score(bc, exp, exp_sigma, bc_sigma, opt_params)
+
+    sse = np.sum((exp - bc) ** 2.0)
+    total_score = np.sum(f)
+
+    return sse, total_score, bc
+
+
+def main(exp_data, bc_data, ens_size=100, epochs=250, output_file=None, verbose=False):
     """
-    The main function to read all the back calculated files
 
     Parameters
     ----------
-    filenames: dict
-        This parameter is a dictionary of properties with their relative path to the data file.
+    ens_size
+    epochs
+    mode: str, optional (default: 'trades_all')
+        This parameter must be one of the followings:
+            - trades_all
+            - trades-unfold
+            - ensemble
+            - mixed
 
-    mode: str
-        This parameter must be one of the following:
-            - 'exp': experimental data
-            - 'trades': back calculated data for TRADES pool
-            - 'mixed': back calculated data for MIXED pool
-            - 'ensemble': back calculated data for ENSEMBLE pool
+    output_file
+    verbose
 
     Returns
     -------
-    dict: A dictionary of properties with their pandas data frame
 
     """
-    if mode == 'exp':
-        return {
-            # property name: Stack(name, exp data, sigma, mu)
-            'rh'  : Stack('rh', 20.3, 0.3, None),
-            'rdc' : Stack('rdc', pd.read_csv(filenames['rdc']), None, None),
-            'pre' : Stack('pre', pd.read_csv(filenames['pre']), None, None),
-            'noe' : Stack('noe', pd.read_csv(filenames['noe']), None, None),
-            'jc'  : Stack('jc', pd.read_csv(filenames['jc']), None, None),
-            'fret': Stack('fret', 0.55, 0.02, None),
-            'cs'  : Stack('cs', pd.read_csv(filenames['cs']), None, None),
-            'saxs': Stack('saxs', pd.read_csv(filenames['saxs']), None, None)
-        }
 
-    elif mode == 'bc':
-        pre_data = pd.read_csv(filenames['pre'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 68
-        pre_data.index = range(pre_data.shape[0]) # just wanted to keep the indices 0-indexed
+    #  get size
+    pool_size = bc_data['cs'].shape[0]
+    if verbose: print("\n### pool size: %i"%pool_size)
 
-        noe_data = pd.read_csv(filenames['noe'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 93
-        noe_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+    # time
+    t0 = time.time()
 
-        jc_data = pd.read_csv(filenames['jc'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 47
-        jc_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+    for it in range(epochs):
+        if verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
 
-        fret_data = pd.read_csv(filenames['fret'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 1
-        fret_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+        # random selection with replacement
+        indices = np.random.randint(0, pool_size-1, ens_size)   # shape: (100,)
 
-        saxs_data = pd.read_csv(filenames['saxs'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 37
-        saxs_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+        # SAXS optimization on ensemble
+        sse_saxs, total_score_saxs, bc_saxs = saxs_optimization_ensemble(exp_data, bc_data, indices)
 
-        return {
-            # property name: Stack(name, back calc data, sigma, mu)
-            'rh': Stack('rh', pd.read_csv(filenames['rh'], header=None),  # shape: None, 1
-                        0.812, None),
-            'rdc': Stack('rdc',
-                         pd.read_csv(filenames['rdc'], header=None, delim_whitespace=True, index_col=0), # shape: None, 28
-                         0.88, None),
-            'pre': Stack('pre', pre_data, 0.0001, None),
-            'noe': Stack('noe', noe_data, 0.0001, None),
-            'jc': Stack('jc', jc_data,
-                        {'A': np.sqrt(0.14), 'B': np.sqrt(0.03), 'C':np.sqrt(0.08)},
-                        {'A': 6.51, 'B': -1.76, 'C': 1.6}),
-            'fret': Stack('fret', fret_data, 0.0062, None),
-            'cs': Stack('cs', pd.read_csv(filenames['cs'], header=None, delim_whitespace=True, index_col=0),  #shape: None, 262
-                        {'C': 0.0533, 'CA': 0.04412, 'CB': 0.05163, 'H': 0.01711, 'HA': 0.01231},
-                        None),
-            'saxs': Stack('saxs', saxs_data, 0.00055, None)
-        }
+        # CS optimization on ensemble
+        sse_cs, total_score_cs, bc_cs = cs_optimization_ensemble(exp_data, bc_data, indices)
+
+        # FRET optimization on ensemble
+        sse_fret, total_score_fret, bc_fret  = fret_optimization_ensemble(exp_data, bc_data, indices)
 
 
+
+# read data
+filenames = meta_data()
+exp_data = read_data(filenames[0], mode='exp')
+bc_data = read_data(filenames[1], mode='bc')
+#Todo: fix for other modes
