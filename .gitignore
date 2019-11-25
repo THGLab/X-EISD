@@ -1,6 +1,7 @@
 # only here!
 .idea/*
 *.ipynb
+/unfolded/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
