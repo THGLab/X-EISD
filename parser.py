@@ -58,6 +58,7 @@ def read_data(filenames, mode):
 
         fret_data = pd.read_csv(filenames['fret'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 1
         fret_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
+        fret_data = (1.0 / (1.0 + (1.05862 * fret_data / 44.0) ** 6.0))
 
         saxs_data = pd.read_csv(filenames['saxs'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 37
         saxs_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
