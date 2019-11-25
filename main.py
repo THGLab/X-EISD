@@ -517,6 +517,6 @@ def main(exp_data, bc_data, ens_size=100, epochs=250, output_file=None, verbose=
 # read data
 filenames = meta_data()
 exp_data = read_data(filenames[0], mode='exp')
-bc_data = read_data(filenames[1], mode='bc')
-main(exp_data, bc_data, epochs=2, output_file='drksh3_all_redo_trades.txt', verbose=True)
+bc_data = read_data(filenames[1], mode='trades_uf')
+main(exp_data, bc_data, epochs=250, output_file='drksh3_unfolded_trades.txt', verbose=True)
 #Todo: fix for other modes
