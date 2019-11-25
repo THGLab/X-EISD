@@ -1,4 +1,5 @@
 import numpy as np
+np.random.seed(90)
 import pandas as pd
 import time
 
@@ -80,7 +81,7 @@ def fret_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped
 
     if indices is None:
         bc = old_vals - (
-                    bc_data['fret'].data.values[popped_structure, :][0] - bc_data['fret'].data.values[new_index, :][0]) / 100.
+                    bc_data['fret'].data.values[popped_structure, :] - bc_data['fret'].data.values[new_index, :]) / 100.
     else:
         bc_ensemble = bc_data['fret'].data.values[indices, :]  # shape: (100, 1)
         bc = np.mean(bc_ensemble, axis=0)  # shape: (1,)
@@ -203,7 +204,7 @@ def jc_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
         bc_alpha1 = old_vals[0] - (pop_alpha - add_alpha)/100.
         assert bc_alpha1.shape == (47,)
 
-        bc_alpha2 = old_vals[0] - (np.square(pop_alpha) - np.square(add_alpha))/100.  # shape: (47,)
+        bc_alpha2 = old_vals[1] - (np.square(pop_alpha) - np.square(add_alpha))/100.  # shape: (47,)
         assert bc_alpha2.shape == (47,)
     else:
         bc_ensemble_alpha1 = bc_data['jc'].data.values[indices, :]  # shape: (100, 47)
@@ -275,9 +276,14 @@ def pre_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_
     range_val = upper_bound_value + lower_bound_value
     exp_sigma = range_val / 4.0
 
-
-    bc_ensemble = np.power(bc_data['pre'].data.values[indices, :], -6.0)  # shape: (100, 68)
-    avg_distance = np.power(np.mean(bc_ensemble, axis=0), (-1./6.))  # shape: (68,)
+    if indices is None:
+        popped = np.power(bc_data['pre'].data.values[popped_structure, :], -6.0)
+        added = np.power(bc_data['pre'].data.values[new_index, :], -6.0)
+        avg_distance = (np.power(old_vals, -6.0)*100. - (popped - added) )/100.
+        avg_distance = np.power(avg_distance, (-1./6.))
+    else:
+        bc_ensemble = np.power(bc_data['pre'].data.values[indices, :], -6.0)  # shape: (100, 68)
+        avg_distance = np.power(np.mean(bc_ensemble, axis=0), (-1./6.))  # shape: (68,)
 
     # optimization
     opt_params = calc_opt_params(avg_distance, exp_distance, exp_sigma, bc_data['pre'].sigma)
@@ -294,9 +300,12 @@ def rdc_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_
     exp = exp_data['rdc'].data['value'].values  # shape: (28,)
     exp_sigma = exp_data['rdc'].data['error'].values  # shape: (28,)
 
-
-    bc_ensemble = bc_data['rdc'].data.values[indices, :]  # shape: (100, 28)
-    bc = np.mean(bc_ensemble, axis=0)  # shape: (28,)
+    if indices is None:
+        bc = old_vals - (
+                    bc_data['rdc'].data.values[popped_structure, :] - bc_data['rdc'].data.values[new_index, :]) / 100.
+    else:
+        bc_ensemble = bc_data['rdc'].data.values[indices, :]  # shape: (100, 28)
+        bc = np.mean(bc_ensemble, axis=0)  # shape: (28,)
 
     # optimization
     opt_params = calc_opt_params(bc, exp, exp_sigma, bc_data['rdc'].sigma)
@@ -313,8 +322,13 @@ def rh_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
     exp = exp_data['rh'].data  # scalar
     exp_sigma = exp_data['rh'].sigma  # scalar
 
-    bc_ensemble = bc_data['rh'].data.values[indices, :]  # shape: (100, 1)
-    bc = np.mean(bc_ensemble, axis=0)  # shape: (1,)
+    if indices is None:
+        bc = old_vals - (
+                    bc_data['rh'].data.values[popped_structure, :] - bc_data['rh'].data.values[new_index, :]) / 100.
+    else:
+        bc_ensemble = bc_data['rh'].data.values[indices, :]  # shape: (100, 1)
+        bc = np.mean(bc_ensemble, axis=0)  # shape: (1,)
+
     bc_sigma = bc_data['rh'].sigma # scalar
 
     # optimization
@@ -341,12 +355,12 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, old_s
     old_RH_val = bc_RH_val
     accepted = 0
     for iterations in range(10000):
-        pop_index = np.random.random_integers(0, ens_size - 1)
+        pop_index = np.random.randint(0, ens_size, 1)[0]
         popped_structure = indices[pop_index]
         indices.pop(pop_index)
         struct_found = False
         while not struct_found:
-            new_index = np.random.random_integers(0, num_structs - 1)
+            new_index = np.random.randint(0, num_structs, 1)[0]
             if new_index != popped_structure:
                 indices.append(new_index)
                 struct_found = True
@@ -377,51 +391,25 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, old_s
                                                                                        new_index)
 
         # PRE
-        
-        new_score_PREs = 0.0
-        restraint_SSE_PRE = 0.0
-        new_dist_vals_PRE = {}
-        for k, v in PRE_data.items():
+        restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE = pre_optimization_ensemble(exp_data, bc_data, None,
+                                                                                       old_dist_vals_PRE, popped_structure,
+                                                                                       new_index)
 
-            dist_value = PRE_data[k]['dist_value']
-            upper_bound_value = PRE_data[k]['upper_bound_value']
-            lower_bound_value = PRE_data[k]['lower_bound_value']
+        # RDC
+        restraint_SSE_RDC, new_score_RDCs, new_RDC_vals = rdc_optimization_ensemble(exp_data, bc_data, None,
+                                                                                       old_RDC_vals, popped_structure,
+                                                                                       new_index)
 
-            exp_distance, exp_sigma = convert_restraint_PRE(dist_value, upper_bound_value, lower_bound_value)
-            avg_distance = (((old_dist_vals_PRE[k]**(-6.0))*100.0-(struct_data_PRE[popped_structure][k]**-6.0-struct_data_PRE[new_index][k]**-6.0))/100.0)**(-1.0/6.0)
-            new_dist_vals_PRE[k] = avg_distance
+        # RH
+        restraint_SSE_RH, new_score_RH, new_RH_val = rh_optimization_ensemble(exp_data, bc_data, None,
+                                                                                       old_RH_val, popped_structure,
+                                                                                       new_index)
 
-            opt_params = calc_opt_params_single(avg_distance, exp_distance, exp_sigma, back_calc_sig_PRE)
-
-            f, f_comps = calc_score(avg_distance, exp_distance, exp_sigma, back_calc_sig_PRE, opt_params)
-            new_score_PREs = new_score_PREs + f
-            restraint_SSE_PRE = restraint_SSE_PRE + (exp_distance - avg_distance) ** 2.0
-
-        new_score_RDCs = 0.0
-        restraint_SSE_RDC = 0.0
-        new_RDC_vals = {}
-        for k, v in exp_data_RDC.items():
-            exp_rdc = exp_data_RDC[k]['value']
-            exp_sigma = exp_data_RDC[k]['error']
-            avg_rdc = old_RDC_vals[k] - (struct_data_RDC[popped_structure][k]-struct_data_RDC[new_index][k])/100.0
-            new_RDC_vals[k] = avg_rdc
-
-            opt_params = calc_opt_params_single(avg_rdc, exp_rdc, exp_sigma, back_calc_sig_RDCs)
-
-            f, f_comps = calc_score(avg_rdc, exp_rdc, exp_sigma, back_calc_sig_RDCs, opt_params)
-            new_score_RDCs = new_score_RDCs + f
-            restraint_SSE_RDC = restraint_SSE_RDC + (exp_rdc - avg_rdc) ** 2.0
-
-        new_score_RH = 0.0
-        restraint_SSE_RH = 0.0
-        avg_RH = old_RH_val - (struct_data_RH[popped_structure]-struct_data_RH[new_index])/100.0
-        new_RH_val = avg_RH
-
-        opt_params = calc_opt_params_single(avg_RH, exp_RH, exp_sigma_RH, back_calc_sig_RH)
-
-        f, f_comps = calc_score(avg_RH, exp_RH, exp_sigma_RH, back_calc_sig_RH, opt_params)
-        new_score_RH = new_score_RH + f
-        restraint_SSE_RH = restraint_SSE_RH + (exp_RH - avg_RH) ** 2.0
+        # if iterations%1000 == 0:
+        #     print("\n*** iteration %i\n"%iterations)
+        #     print(popped_structure)
+        #     print(new_score_SAXS, new_score_CS, new_score_FRET, new_score_JC)
+        #     print(new_score_NOEs, new_score_PREs, new_score_RDCs, new_score_RH)
 
         if old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
                 old_score_RDCs + old_score_RH > new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
@@ -432,68 +420,49 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, old_s
         else:
             #print repr(i+1) + ' ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
             old_score_SAXS = new_score_SAXS
-            new_SSE_SAXS = restraint_SSE_SAXS
             old_score_CS = new_score_CS
-            new_SSE_CS = restraint_SSE_CS
             old_SAXS_vals = new_SAXS_vals
             old_shift_vals = new_shift_vals
             old_score_FRET = new_score_FRET
-            new_SSE_FRET = restraint_SSE_FRET
             old_FRET_val = new_FRET_val
             old_score_JC = new_score_JC
-            new_SSE_JC = restraint_SSE_JC
             old_alpha_vals = new_alpha_vals
             old_score_NOEs = new_score_NOEs
-            new_SSE_NOE = restraint_SSE_NOE
             old_dist_vals_NOE = new_dist_vals_NOE
             old_score_PREs = new_score_PREs
-            new_SSE_PRE = restraint_SSE_PRE
             old_dist_vals_PRE = new_dist_vals_PRE
             old_score_RDCs = new_score_RDCs
-            new_SSE_RDC = restraint_SSE_RDC
             old_RDC_vals = new_RDC_vals
             old_score_RH = new_score_RH
-            new_SSE_RH = restraint_SSE_RH
             old_RH_val = new_RH_val
             accepted = accepted + 1
+
+            new_SSE_SAXS = restraint_SSE_SAXS
+            new_SSE_CS = restraint_SSE_CS
+            new_SSE_FRET = restraint_SSE_FRET
+            new_SSE_JC = restraint_SSE_JC
+            new_SSE_NOE = restraint_SSE_NOE
+            new_SSE_PRE = restraint_SSE_PRE
+            new_SSE_RDC = restraint_SSE_RDC
+            new_SSE_RH = restraint_SSE_RH
+
     return old_score_SAXS, new_SSE_SAXS, old_score_CS, new_SSE_CS, old_score_FRET, new_SSE_FRET, old_score_JC, new_SSE_JC, old_score_NOEs, new_SSE_NOE, old_score_PREs, new_SSE_PRE, old_score_RDCs, new_SSE_RDC, old_score_RH, new_SSE_RH, accepted, indices, jcoup_vals
 
 
 def main(exp_data, bc_data, ens_size=100, epochs=250, output_file=None, verbose=False):
-    """
-
-    Parameters
-    ----------
-    ens_size
-    epochs
-    mode: str, optional (default: 'trades_all')
-        This parameter must be one of the followings:
-            - trades_all
-            - trades-unfold
-            - ensemble
-            - mixed
-
-    output_file
-    verbose
-
-    Returns
-    -------
-
-    """
+    """"""
 
     #  get size
-    pool_size = bc_data['cs'].shape[0]
+    pool_size = bc_data['cs'].data.shape[0]
     if verbose: print("\n### pool size: %i"%pool_size)
 
     # time
     t0 = time.time()
 
-    textfile = open('drksh3_all_redo_trades.txt', 'w')
+    textfile = open(output_file, 'w')
     for it in range(epochs):
-        if verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
-
         # random selection with replacement
-        indices = np.random.randint(0, pool_size-1, ens_size)   # shape: (100,)
+        indices = np.random.randint(0, pool_size, ens_size)   # shape: (100,)
 
         # SAXS optimization on ensemble
         sse_saxs, total_score_saxs, bc_saxs = saxs_optimization_ensemble(exp_data, bc_data, indices)
@@ -539,6 +508,9 @@ def main(exp_data, bc_data, ens_size=100, epochs=250, output_file=None, verbose=
             opt_SSE_RH ** 0.5) + ' ' + repr(new_indices) + ' ' + repr(best_jcoups) + '\n'
         textfile.write(s)
         textfile.flush()
+
+        if verbose: print("\n### iteration: %i  (elapsed time: %f seconds)"%(it+1, time.time()-t0))
+
     textfile.close()
 
 
@@ -546,4 +518,5 @@ def main(exp_data, bc_data, ens_size=100, epochs=250, output_file=None, verbose=
 filenames = meta_data()
 exp_data = read_data(filenames[0], mode='exp')
 bc_data = read_data(filenames[1], mode='bc')
+main(exp_data, bc_data, epochs=2, output_file='drksh3_all_redo_trades.txt', verbose=True)
 #Todo: fix for other modes
