@@ -25,7 +25,7 @@ def read_data(filenames, mode):
         This parameter must be one of the following:
             - 'exp': experimental data
             - 'trades': back calculated data for TRADES pool
-            - 'trades_uf': back calculated data for TRADES pool only with unfolded structures
+            - 'trades_uf': back calculated data for TRADES pool only including unfolded structures
             - 'mixed': back calculated data for MIXED pool
             - 'ensemble': back calculated data for ENSEMBLE pool
 

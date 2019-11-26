@@ -2,7 +2,7 @@
 This module contains miscellaneous utility functions to run the main script.
 """
 
-def make_paris():
+def make_pairs():
     all = ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']
     pairs=[]
     for i in range(len(all)):
