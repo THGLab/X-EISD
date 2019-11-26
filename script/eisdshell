@@ -4,9 +4,9 @@ import os
 import argparse
 
 from eisd.parser import read_data
-from eisd.meta import meta_data
+from eisd.utils import meta_data
 from eisd.optimizer import main
-from eisd.utils import make_paris
+from eisd.utils import make_pairs
 
 
 # argument parser description
@@ -86,7 +86,7 @@ elif run_mode == 'dual':
     if not os.path.exists(abs_output):
         os.makedirs(abs_output)
 
-    pairs = make_paris()
+    pairs = make_pairs()
     for pair in pairs:
         output_file = os.path.join(abs_output, "%s_%s_%s_%s.txt"%(structure, run_mode, pair[0], pair[1]))
         main(exp_data, bc_data, epochs=epochs, mode=pair, output_file=output_file, verbose=True)
