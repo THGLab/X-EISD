@@ -1,6 +1,4 @@
 import numpy as np
-np.random.seed(90)
-
 import time
 
 from eisd.utils import modes
