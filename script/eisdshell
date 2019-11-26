@@ -62,16 +62,8 @@ abs_output = args.output
 
 # read data and structure files
 filenames = meta_data(data_path)
-exp_data = read_data(filenames[0], mode='exp')
-
-if structure in ['trades', 'trades_uf']:
-    bc_data = read_data(filenames[1], mode=structure)
-elif structure == 'mixed':
-    bc_data = read_data(filenames[2], mode=structure)
-elif structure == 'ensemble':
-    bc_data = read_data(filenames[3], mode=structure)
-else:
-    raise NotImplementedError("We currently only support available structure pools that have been used in our most recent papers.")
+exp_data = read_data(filenames['exp'], mode='exp')
+bc_data = read_data(filenames[structure], mode=structure)
 
 # all
 if run_mode == 'all':
