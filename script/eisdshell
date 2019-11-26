@@ -1,0 +1,101 @@
+#! /usr/bin/env python
+
+import os
+import argparse
+
+from eisd.parser import read_data
+from eisd.meta import meta_data
+from eisd.optimizer import main
+from eisd.utils import make_paris
+
+
+# argument parser description
+parser = argparse.ArgumentParser(
+    description=
+    'This is a pacakge to run Experimental Inferential Structure Determination (EISD) on eight experimental observables.'
+)
+parser.add_argument(
+    '-d',
+    "--datapath",
+    type=str,
+    required=True,
+    help="The path to the data and structures directory. We look for required data relatively.")
+
+parser.add_argument(
+    '-m',
+    "--mode",
+    type=str,
+    required=True,
+    help="The run mode, which should be one of the following: all, single, dual.")
+
+parser.add_argument(
+    '-s',
+    "--structure",
+    type=str,
+    required=True,
+    help="The pool of structures that we want to run EISD on them. It must be one of the following: trades, trades_uf, mixed, ensemble")
+
+parser.add_argument(
+    '-e',
+    "--epochs",
+    type=int,
+    required=True,
+    help="The number of epochs to run main optimization.")
+
+parser.add_argument(
+    '-o',
+    "--output",
+    type=str,
+    required=True,
+    help="The path to the output directory. It will be created if it doesn't exist.")
+
+
+
+# define arguments
+args = parser.parse_args()
+data_path = args.datapath
+run_mode = args.mode
+structure = args.structure
+epochs = args.epochs
+abs_output = args.output
+
+
+# read data and structure files
+filenames = meta_data(data_path)
+exp_data = read_data(filenames[0], mode='exp')
+
+if structure in ['trades', 'trades_uf']:
+    bc_data = read_data(filenames[1], mode=structure)
+elif structure == 'mixed':
+    bc_data = read_data(filenames[2], mode=structure)
+elif structure == 'ensemble':
+    bc_data = read_data(filenames[3], mode=structure)
+else:
+    raise NotImplementedError("We currently only support available structure pools that have been used in our most recent papers.")
+
+# all
+if run_mode == 'all':
+    if not os.path.exists(abs_output):
+        os.makedirs(abs_output)
+
+    output_file = os.path.join(abs_output, '%s_%s.txt'%(structure, run_mode))
+    main(exp_data, bc_data, epochs=epochs, mode='all', output_file=output_file, verbose=True)
+
+# dual mode
+elif run_mode == 'dual':
+    if not os.path.exists(abs_output):
+        os.makedirs(abs_output)
+
+    pairs = make_paris()
+    for pair in pairs:
+        output_file = os.path.join(abs_output, "%s_%s_%s_%s.txt"%(structure, run_mode, pair[0], pair[1]))
+        main(exp_data, bc_data, epochs=epochs, mode=pair, output_file=output_file, verbose=True)
+
+# single mode
+elif run_mode == 'single':
+    if not os.path.exists(abs_output):
+        os.makedirs(abs_output)
+
+    for mode in ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']:
+        output_file = os.path.join(abs_output, "%s_%s_%s.txt"%(structure, run_mode, mode))
+        main(exp_data, bc_data, epochs=epochs, mode=mode, output_file=output_file, verbose=True)

@@ -1,8 +1,8 @@
 import os
 
 
-def meta_data():
-    abs_path = "../eisd-pkg"
+def meta_data(abs_path):
+    # abs_path = "../eisd-pkg"
 
     # experimental data file names
     relative_path = os.path.join(abs_path, "experimental_data")
