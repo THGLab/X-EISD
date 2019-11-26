@@ -25,6 +25,10 @@ Please cite the use of EISD as:
 ## Getting Started 
 You can either follow along the sample_script.py in the repository or use the commnd line interface to run eisd: 
 
+    python sample_script.py     # first modify sample_script based upon your request 
+      
+or
+
     eisdshell -d/--datapath, -m/--mode, -s/--structure, -e/--epochs, -o/--output
 
 
