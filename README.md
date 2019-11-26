@@ -1,5 +1,5 @@
 # EISD – Experimental Inferential Structure Determination
-EISD is Bayeian approach to perform Experimental Inferential Structure Determination of Ensembles for intrinsically disordered proteins.
+EISD is a Bayeian approach to perform Experimental Inferential Structure Determination of ensembles for intrinsically disordered proteins.
 
 Program version: 0.1.0  -  Latest update: Nov 25, 2019
 
