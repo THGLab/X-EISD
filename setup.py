@@ -15,8 +15,7 @@ if __name__ == "__main__":
         author='James Lincoff, THGLab',
         author_email='jlincoff@berkeley.edu',
         project_urls={
-            'Source': 'https://github.com/THGLab/eisd',
-            'url': 'coming soon'
+            'Source': 'https://github.com/THGLab/eisd'
         },
         description=
         'Experimental Inferential Structure Determination',
