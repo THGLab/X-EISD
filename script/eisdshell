@@ -49,6 +49,13 @@ parser.add_argument(
     required=True,
     help="The path to the output directory. It will be created if it doesn't exist.")
 
+parser.add_argument(
+    '-opt',
+    "--optimization",
+    type=bool,
+    required=False,
+    default=True,
+    help="True if the optimization is required. The value is True by default.")
 
 
 # define arguments
@@ -58,7 +65,10 @@ run_mode = args.mode
 structure = args.structure
 epochs = args.epochs
 abs_output = args.output
+optimization = args.optimization
 
+if not os.path.exists(abs_output):
+    os.makedirs(abs_output)
 
 # read data and structure files
 filenames = meta_data(data_path)
@@ -67,27 +77,21 @@ bc_data = read_data(filenames[structure], mode=structure)
 
 # all
 if run_mode == 'all':
-    if not os.path.exists(abs_output):
-        os.makedirs(abs_output)
 
-    output_file = os.path.join(abs_output, '%s_%s.txt'%(structure, run_mode))
-    main(exp_data, bc_data, epochs=epochs, mode='all', output_file=output_file, verbose=True)
+    output_dir = os.path.join(abs_output, '%s_%s'%(structure, run_mode))
+    main(exp_data, bc_data, epochs=epochs, mode='all', optimization=optimization, output_dir=output_dir, verbose=True)
 
 # dual mode
 elif run_mode == 'dual':
-    if not os.path.exists(abs_output):
-        os.makedirs(abs_output)
 
     pairs = make_pairs()
     for pair in pairs:
-        output_file = os.path.join(abs_output, "%s_%s_%s_%s.txt"%(structure, run_mode, pair[0], pair[1]))
-        main(exp_data, bc_data, epochs=epochs, mode=pair, output_file=output_file, verbose=True)
+        output_dir = os.path.join(abs_output, "%s_%s_%s_%s"%(structure, run_mode, pair[0], pair[1]))
+        main(exp_data, bc_data, epochs=epochs, mode=pair, output_dir=output_dir, verbose=True)
 
 # single mode
 elif run_mode == 'single':
-    if not os.path.exists(abs_output):
-        os.makedirs(abs_output)
 
     for mode in ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']:
-        output_file = os.path.join(abs_output, "%s_%s_%s.txt"%(structure, run_mode, mode))
-        main(exp_data, bc_data, epochs=epochs, mode=mode, output_file=output_file, verbose=True)
+        output_dir = os.path.join(abs_output, "%s_%s_%s"%(structure, run_mode, mode))
+        main(exp_data, bc_data, epochs=epochs, mode=mode, output_dir=output_dir, verbose=True)

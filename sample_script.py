@@ -1,6 +1,6 @@
 """This is a sample script to run eisd with our local data."""
 import numpy as np
-np.random.seed(90)
+np.random.seed(91)
 import os
 
 from eisd.utils import meta_data
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     #   - all: optimize on all experimental observables together
     #   - single: optimize on individual experimental observable
     #   - dual: optimize on pairs of experimental observables
-    run_mode = 'dual'
+    run_mode = 'all'
 
     # read files
     filenames = meta_data(data_path)
@@ -28,34 +28,31 @@ if __name__ == '__main__':
 
     # run_mode: all
     if run_mode == 'all':
-        abs_output = "newrun/unfolded/all"
+        abs_output = "newrun/unfolded/all_unoptimized"
         if not os.path.exists(abs_output):
             os.makedirs(abs_output)
 
-        output_file = os.path.join(abs_output, 'drksh3_folded_trades_all.txt')
-        main(exp_data, bc_data, epochs=250, mode='all', output_file=output_file, verbose=True)
+        # main(exp_data, bc_data, epochs=1000, mode='all', optimization=True, output_dir=abs_output, verbose=False)
+        main(exp_data, bc_data, epochs=1000, mode='all', optimization=False, output_dir=abs_output, verbose=False)
 
     # run_mode: dual
     elif run_mode == 'dual':
-        abs_output = "newrun/unfolded/dual_mode"
-        if not os.path.exists(abs_output):
-            os.makedirs(abs_output)
-
         # pairs = make_pairs()
         # pairs = [['saxs', 'jc'],['cs', 'jc'], ['fret', 'jc'],['jc', 'noe'],['jc', 'pre'],['jc', 'rdc'],['jc', 'rh']]
         pairs = [['saxs', 'noe'], ['cs', 'noe'], ['cs', 'pre'], ['cs', 'rdc'],['fret', 'noe'], ['noe', 'pre'], ['noe', 'rdc']]
-        for pair in pairs[4:]:
-            output_file = os.path.join(abs_output, "drksh3_unfolded_trades_%s_%s.txt"%(pair[0], pair[1]))
-            main(exp_data, bc_data, epochs=1000, mode=pair, output_file=output_file, verbose=False)
+        for pair in pairs:
+            abs_output = "temp/unfolded/dual_mode/%s_%s"%(pair[0], pair[1])
+            if not os.path.exists(abs_output):
+                os.makedirs(abs_output)
+            main(exp_data, bc_data, epochs=1000, mode=pair, output_dir=abs_output, verbose=False)
 
     # run_mode: single
     elif run_mode == 'single':
-        abs_output = "newrun/unfolded/single_mode"
-        if not os.path.exists(abs_output):
-            os.makedirs(abs_output)
-
         # single_modes = ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']
         single_modes = ['jc']
         for mode in single_modes:
-            output_file = os.path.join(abs_output, "drksh3_unfolded_trades_%s.txt"%mode)
-            main(exp_data, bc_data, epochs=1000, mode=mode, output_file=output_file, verbose=True)
+            abs_output = "newrun/unfolded/single_mode/%s"%mode
+            if not os.path.exists(abs_output):
+                os.makedirs(abs_output)
+
+            main(exp_data, bc_data, epochs=1000, mode=mode, output_dir=abs_output, verbose=True)
