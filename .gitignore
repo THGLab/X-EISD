@@ -1,10 +1,7 @@
 # only here!
 .idea/*
 *.ipynb
-/unfolded/*
-/newrun/*
-log-*.txt
-*.zip
+/local/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
