@@ -79,6 +79,7 @@ def read_data(filenames, mode):
             'fret': Stack('fret', fret_data, 0.0062, None),
             'cs': Stack('cs', pd.read_csv(filenames['cs'], header=None, delim_whitespace=True, index_col=0),  #shape: None, 262
                         {'C': 0.533, 'CA': 0.4412, 'CB': 0.5163, 'H': 0.1711, 'HA': 0.1231},
+                        # {'C': 1.21, 'CA': 1.16, 'CB': 1.43, 'H': 0.52, 'HA': 0.29},  # LH-Test from Li et al
                         None),
             'saxs': Stack('saxs', saxs_data, 0.00055, None)
         }
@@ -115,6 +116,7 @@ def read_data(filenames, mode):
             'fret': Stack('fret', fret_data.iloc[100:, :], 0.0062, None),
             'cs': Stack('cs', pd.read_csv(filenames['cs'], header=None, delim_whitespace=True, index_col=0).iloc[100:, :],  #shape: None, 262
                         {'C': 0.533, 'CA': 0.4412, 'CB': 0.5163, 'H': 0.1711, 'HA': 0.1231},
+                        # {'C': 1.21, 'CA': 1.16, 'CB': 1.43, 'H': 0.52, 'HA': 0.29},   # LH-Test from Li et al
                         None),
             'saxs': Stack('saxs', saxs_data.iloc[100:, :], 0.00055, None)
         }

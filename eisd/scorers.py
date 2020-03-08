@@ -30,7 +30,7 @@ def calc_score(beta,exp,exp_sig,sig,opt_params):
 def saxs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
     # prepare data
     exp_saxs = exp_data['saxs'].data['value'].values  # shape: (37,)
-    exp_sigma = exp_data['saxs'].data['error'].values  # shape: (37,)
+    exp_sigma = exp_data['saxs'].data['error'].values * 0.1  # shape: (37,)
 
     if indices is None:
         bc_saxs = old_vals - (bc_data['saxs'].data.values[popped_structure, :] - bc_data['saxs'].data.values[new_index, :] )/100.
