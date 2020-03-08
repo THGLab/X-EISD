@@ -7,7 +7,7 @@ from eisd.utils import modes
 from eisd.scorers import *
 
 
-def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags,
+def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags,beta,
                         old_score_SAXS, old_score_CS, old_score_FRET, old_score_JC,
                         old_score_NOEs, old_score_PREs, old_score_RDCs, old_score_RH,
                         bc_SAXS_vals, bc_shift_vals, bc_FRET_val, bc_alpha_vals,
@@ -108,14 +108,22 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
         #     print(new_score_SAXS, new_score_CS, new_score_FRET, new_score_JC)
         #     print(new_score_NOEs, new_score_PREs, new_score_RDCs, new_score_RH)
 
-        if old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
-                old_score_RDCs + old_score_RH > new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
-                new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH:
-            indices.pop(-1)
-            indices.append(popped_structure)
-            # print repr(i) + ' 0 ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
-        else:
-            #print repr(i+1) + ' ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
+
+        old_score = old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
+                    old_score_RDCs + old_score_RH
+        new_score = new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
+                new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH
+
+        new_probability = np.exp(-beta*new_score)
+        old_probability = np.exp(-beta*old_score)
+        u = np.random.random_sample()
+
+        # print('optimization it%i:\n'%iterations,
+        #       new_score-old_score, u, new_probability/old_probability)
+        # print('old:', old_score, [old_probability])
+        # print('new:', new_score, [new_probability])
+
+        if u < min(1, new_probability/old_probability): # acceptance criterion
             old_score_SAXS = new_score_SAXS
             old_score_CS = new_score_CS
             old_score_FRET = new_score_FRET
@@ -145,10 +153,51 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
             accepted = accepted + 1
 
+        else:   # reject and return the popped structure
+            indices.pop(-1)
+            indices.append(popped_structure)
+
+        # if old_score_SAXS + old_score_CS + old_score_FRET + old_score_JC + old_score_NOEs + old_score_PREs + \
+        #         old_score_RDCs + old_score_RH > new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
+        #         new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH:
+        #     indices.pop(-1)
+        #     indices.append(popped_structure)
+        #     # print repr(i) + ' 0 ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
+        # else:
+        #     #print repr(i+1) + ' ' + repr(new_score_SAXS) + ' ' + repr(old_score_SAXS) + ' ' + repr(indices)
+        #     old_score_SAXS = new_score_SAXS
+        #     old_score_CS = new_score_CS
+        #     old_score_FRET = new_score_FRET
+        #     old_score_JC = new_score_JC
+        #     old_score_NOEs = new_score_NOEs
+        #     old_score_PREs = new_score_PREs
+        #     old_score_RDCs = new_score_RDCs
+        #     old_score_RH = new_score_RH
+        #
+        #     old_SAXS_vals = new_SAXS_vals
+        #     old_shift_vals = new_shift_vals
+        #     old_FRET_val = new_FRET_val
+        #     old_alpha_vals = new_alpha_vals
+        #     old_dist_vals_NOE = new_dist_vals_NOE
+        #     old_dist_vals_PRE = new_dist_vals_PRE
+        #     old_RDC_vals = new_RDC_vals
+        #     old_RH_val = new_RH_val
+        #
+        #     new_SSE_SAXS = restraint_SSE_SAXS
+        #     new_SSE_CS = restraint_SSE_CS
+        #     new_SSE_FRET = restraint_SSE_FRET
+        #     new_SSE_JC = restraint_SSE_JC
+        #     new_SSE_NOE = restraint_SSE_NOE
+        #     new_SSE_PRE = restraint_SSE_PRE
+        #     new_SSE_RDC = restraint_SSE_RDC
+        #     new_SSE_RH = restraint_SSE_RH
+        #
+        #     accepted = accepted + 1
+
     return old_score_SAXS, new_SSE_SAXS, old_score_CS, new_SSE_CS, old_score_FRET, new_SSE_FRET, old_score_JC, new_SSE_JC, old_score_NOEs, new_SSE_NOE, old_score_PREs, new_SSE_PRE, old_score_RDCs, new_SSE_RDC, old_score_RH, new_SSE_RH, accepted, indices, jcoup_vals
 
 
-def main(exp_data, bc_data, ens_size=100, epochs=250, mode='all', optimization=True, output_dir=None, verbose=False):
+def main(exp_data, bc_data, ens_size=100, epochs=250, mode='all', beta=0.0, output_dir=None, verbose=False):
     """"""
 
     #  get size
@@ -158,6 +207,7 @@ def main(exp_data, bc_data, ens_size=100, epochs=250, mode='all', optimization=T
     # time
     t0 = time.time()
 
+    # switch the property
     flags = modes(mode)
 
     final_results = []
@@ -217,10 +267,10 @@ def main(exp_data, bc_data, ens_size=100, epochs=250, mode='all', optimization=T
             sse_rh, total_score_rh, bc_rh = [0, 0, 0]
 
         # optimization
-        if optimization:
+        if beta>0.0:
             max_score_SAXS, opt_SSE_SAXS, max_score_CS, opt_SSE_CS, max_score_FRET, opt_SSE_FRET, max_score_JC, opt_SSE_JC, \
             max_score_NOEs, opt_SSE_NOE, max_score_PREs, opt_SSE_PRE, max_score_RDCs, opt_SSE_RDC, max_score_RH, opt_SSE_RH, \
-            accepted, new_indices, best_jcoups = maximize_score_SAXS(exp_data, bc_data, ens_size, indices, pool_size, flags,
+            accepted, new_indices, best_jcoups = maximize_score_SAXS(exp_data, bc_data, ens_size, indices, pool_size, flags,beta,
                                                                      total_score_saxs, total_score_cs, total_score_fret,
                                                                      total_score_jc,
                                                                      total_score_noe, total_score_pre, total_score_rdc,
@@ -249,8 +299,8 @@ def main(exp_data, bc_data, ens_size=100, epochs=250, mode='all', optimization=T
             opt_SSE_RDC = sse_rdc
             opt_SSE_RH = sse_rh
 
-        s = [it, accepted,max_score_SAXS, max_score_CS,max_score_FRET,max_score_JC,
-                          max_score_NOEs, max_score_PREs, max_score_RDCs, max_score_RH,
+        s = [it, accepted, max_score_SAXS, max_score_CS, max_score_FRET, max_score_JC,
+                           max_score_NOEs, max_score_PREs, max_score_RDCs, max_score_RH,
                 (opt_SSE_SAXS / 37.0) ** 0.5,
                 (opt_SSE_CS / 262.0) ** 0.5,
                 opt_SSE_FRET ** 0.5,
