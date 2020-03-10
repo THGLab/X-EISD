@@ -4,24 +4,23 @@ This module contains all functions that are required to perform a single propert
 
 import numpy as np
 
-
 def calc_opt_params(beta,exp,exp_sig,sig):
     ratio = (sig**2.0)/(exp_sig**2.0)
     opt_params = (ratio*(exp-beta))/(1.0+ratio)
     return opt_params
 
 
-def normal_loglike(x, mu, sig):
-    exp_val = -((x - mu)** 2.0)/(2.0 *(sig ** 2.0))
+def normal_loglike(x, mu, sig, gamma=1.0):
+    exp_val = -gamma * ((x - mu)** 2.0)/(2.0 *(sig ** 2.0))
     pre_exp = 1.0/(np.sqrt(2.0*np.pi*(sig ** 2.0)))
     logp = np.log(pre_exp*np.exp(exp_val))
     return logp
 
 
-def calc_score(beta,exp,exp_sig,sig,opt_params):
-    f_q = normal_loglike(opt_params,0,sig)
+def calc_score(beta,exp,exp_sig,sig,opt_params, gamma=1.0):
+    f_q = normal_loglike(opt_params,0,sig, gamma)
     err = exp - opt_params - beta
-    f_err = normal_loglike(err,0,exp_sig)
+    f_err = normal_loglike(err,0,exp_sig, gamma)
     f = f_q + f_err
     f_comps = [f_q, f_err]
     return f, f_comps
@@ -30,7 +29,7 @@ def calc_score(beta,exp,exp_sig,sig,opt_params):
 def saxs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
     # prepare data
     exp_saxs = exp_data['saxs'].data['value'].values  # shape: (37,)
-    exp_sigma = exp_data['saxs'].data['error'].values * 0.1  # shape: (37,)
+    exp_sigma = exp_data['saxs'].data['error'].values # shape: (37,)
 
     if indices is None:
         bc_saxs = old_vals - (bc_data['saxs'].data.values[popped_structure, :] - bc_data['saxs'].data.values[new_index, :] )/100.
@@ -40,7 +39,7 @@ def saxs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped
 
     # optimization
     opt_params = calc_opt_params(bc_saxs, exp_saxs, exp_sigma, bc_data['saxs'].sigma)
-    f, f_comps = calc_score(bc_saxs, exp_saxs, exp_sigma, bc_data['saxs'].sigma, opt_params)
+    f, f_comps = calc_score(bc_saxs, exp_saxs, exp_sigma, bc_data['saxs'].sigma, opt_params, gamma=3./37.)
 
     sse_saxs = np.sum((exp_saxs - bc_saxs) ** 2.0)
     total_score_saxs = np.sum(f)
