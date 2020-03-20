@@ -54,7 +54,7 @@ def read_data(filenames, mode):
             'saxs': Stack('saxs', saxs, None, None)
         }
 
-    elif mode in  ['trades', 'mixed', 'ensemble']:
+    elif mode in  ['mixed', 'ensemble']:
         pre_data = pd.read_csv(filenames['pre'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 68
         pre_data.index = range(pre_data.shape[0]) # just wanted to keep the indices 0-indexed
         pre_data.drop(22, axis=1, inplace=True)  # remove index 21, column 22 (due to high upper bound error: outlier)
@@ -68,7 +68,9 @@ def read_data(filenames, mode):
 
         fret_data = pd.read_csv(filenames['fret'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 1
         fret_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
-        fret_data = (1.0 / (1.0 + (1.05862 * fret_data / 44.0) ** 6.0))
+        # fret_data = (1.0 / (1.0 + (1.05862 * fret_data / 44.0) ** 6.0))
+        if mode == 'mixed':
+            fret_data.iloc[1700:] = (1.0 / (1.0 + (1.05862 * fret_data.iloc[1700:] / 44.0) ** 6.0))
 
         saxs_data = pd.read_csv(filenames['saxs'], header=None, delim_whitespace=True, index_col=0)   # shape: None, 37
         saxs_data.index = range(noe_data.shape[0]) # just wanted to keep the indices 0-indexed
