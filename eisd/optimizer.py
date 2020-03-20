@@ -114,8 +114,8 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
             new_score = new_score_SAXS + new_score_CS + new_score_FRET + new_score_JC + \
                     new_score_NOEs + new_score_PREs + new_score_RDCs + new_score_RH
 
-            new_probability = np.exp(-beta*new_score)
-            old_probability = np.exp(-beta*old_score)
+            new_probability = np.exp(beta*new_score)
+            old_probability = np.exp(beta*old_score)
             u = np.random.random_sample()
 
             # print(iterations, old_score, old_score_PREs, new_score, new_score_PREs)
