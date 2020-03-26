@@ -26,9 +26,10 @@ if __name__ == '__main__':
     # in the new_prop_error directory the following properties are affected: CS, FRET, PRE, SAXS
 
     run_mode = 'pre_indices'
-    pre_indices_mode = 'dual'  # 'dual' or 'signle'
+    pre_indices_mode = 'all'  # 'dual' or 'signle'
     # pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/single_mode/opt_%s/'%(structure,str(opt_type))
-    pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s/'%(structure,str(opt_type))
+    # pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s/'%(structure,str(opt_type))
+    pre_indices_path = 'local/ensemble_1700/'
 
     # read files
     filenames = meta_data(data_path)
@@ -102,3 +103,12 @@ if __name__ == '__main__':
                 if not os.path.exists(abs_output):
                     os.makedirs(abs_output)
                 main(exp_data, bc_data, pre_indices=pre_indices, output_dir=abs_output)
+
+        elif pre_indices_mode == 'all':
+            pre_indices = np.array([range(1700)])
+            abs_output = os.path.join(pre_indices_path, 'all_processed')
+            print(abs_output)
+            if not os.path.exists(abs_output):
+                os.makedirs(abs_output)
+            main(exp_data, bc_data, pre_indices=pre_indices, output_dir=abs_output, opt_type=None)
+
