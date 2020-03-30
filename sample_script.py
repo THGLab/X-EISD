@@ -1,4 +1,7 @@
-"""This is a sample script to run eisd with our local data."""
+"""
+This is a sample script to run eisd with N-terminal drk SH3 data that is provided in the data directory.
+"""
+
 import numpy as np
 np.random.seed(91)
 import os
@@ -9,29 +12,28 @@ from eisd.parser import read_data
 from eisd.utils import make_pairs
 from eisd.optimizer import main
 
-
-
 if __name__ == '__main__':
 
     # parameters
-    data_path = "../eisd-pkg" # path to experimental data and structure pools (james' compilation)
-    structure = 'ensemble'  # ['trades', 'trades_uf', 'mixed', 'ensemble']
+    data_path = "data/"         # path to experimental data and structure pools
+    structure = 'ensemble'      # ['trades_uf', 'mixed', 'ensemble'], trades_uf refers to the Random pool
+
     # run_mode: How do you want to run the eisd optimizer?
     #   - all: optimize on all experimental observables together
     #   - single: optimize on individual experimental observable
     #   - dual: optimize on pairs of experimental observables
-    # run_mode = 'dual'
-    opt_type = 'max' # 'max', 'mc', None
-    beta = 0.1
-    # in the new_prop_error directory the following properties are affected: CS, FRET, PRE, SAXS
+    run_mode = 'all'
 
-    run_mode = 'pre_indices'
-    pre_indices_mode = 'all'  # 'dual' or 'signle'
+    opt_type = 'max'    # optimization type: 'max', 'mc', None
+    beta = 0.1          # hyperparameter for 'mc' opt_type (Metropolis Monte Carlo)
+
+    # run_mode = 'pre_indices'
+    # pre_indices_mode = 'all'  # 'dual' or 'signle'
     # pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/single_mode/opt_%s/'%(structure,str(opt_type))
     # pre_indices_path = 'local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s/'%(structure,str(opt_type))
-    pre_indices_path = 'local/ensemble_1700/'
+    # pre_indices_path = 'local/ensemble_1700/'
 
-    # read files
+    # read files: meta_data and read_data functions provide all required info to reproduce our published results
     filenames = meta_data(data_path)
     exp_data = read_data(filenames['exp'], mode='exp')
     bc_data = read_data(filenames[structure], mode=structure)
@@ -51,9 +53,9 @@ if __name__ == '__main__':
 
     # run_mode: dual
     elif run_mode == 'dual':
-        # pairs = make_pairs()
+        pairs = make_pairs()
         # pairs = [['saxs', 'jc'],['cs', 'jc'], ['fret', 'jc'],['jc', 'noe'],['jc', 'pre'],['jc', 'rdc'],['jc', 'rh']]
-        pairs = [['fret', 'noe'], ['fret', 'pre'], ['fret', 'rdc'], ['fret', 'rh']]
+        # pairs = [['fret', 'noe'], ['fret', 'pre'], ['fret', 'rdc'], ['fret', 'rh']]
         for pair in pairs:
             if opt_type == 'mc':
                 abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/dual_mode/opt_%s_b%s/%s_%s"%(structure, str(opt_type), str(beta) ,pair[0], pair[1])
@@ -66,8 +68,8 @@ if __name__ == '__main__':
 
     # run_mode: single
     elif run_mode == 'single':
-        # single_modes = ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']
-        single_modes = ['saxs', 'cs', 'fret']
+        single_modes = ['saxs', 'cs', 'fret', 'jc', 'noe', 'pre', 'rdc', 'rh']
+        # single_modes = ['saxs', 'cs', 'fret']
         for mode in single_modes:
             if opt_type == 'mc':
                 abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/single_mode/opt_%s_b%s/%s"%(structure, str(opt_type),str(beta),mode)
@@ -79,6 +81,7 @@ if __name__ == '__main__':
 
             main(exp_data, bc_data, epochs=1000, mode=mode, beta=beta, opt_type=opt_type, output_dir=abs_output, verbose=True)
 
+    """
     # run_mode: pre_indices; to calculate scores/RMSDs for the remaining unoptimized properties
     elif run_mode == 'pre_indices':
         if pre_indices_mode == 'single':
@@ -111,4 +114,4 @@ if __name__ == '__main__':
             if not os.path.exists(abs_output):
                 os.makedirs(abs_output)
             main(exp_data, bc_data, pre_indices=pre_indices, output_dir=abs_output, opt_type=None)
-
+    """
