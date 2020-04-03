@@ -1,22 +1,22 @@
-# EISD – Experimental Inferential Structure Determination
-EISD is a Bayeian approach to perform Experimental Inferential Structure Determination of ensembles for intrinsically disordered proteins.
+# X-EISD: Extended Experimental Inferential Structure Determination
+X-EISD is a Bayeian approach to perform Experimental Inferential Structure Determination of ensembles for intrinsically disordered proteins.
 
-Program version: 0.2.0  -  Latest update: March 20, 2020
+Program version: 0.2.0  -  Latest update: April 03, 2020
 
 
 ## Installation:
 You can install eisd from the source:
 
-    git clone https://github.com/THGLab/EISD.git
-    cd EISD
+    git clone https://github.com/THGLab/X-EISD.git
+    cd X-EISD
     pip install -e .
 
 ## Dependencies:
-The dependencies for EISD are only numpy and pandas libraries. A proper installation of the package will also install
+The dependencies for X-EISD are only numpy and pandas libraries. A proper installation of the package will also install
 the requirements.
 
 ## Citation:
-Please cite the use of EISD as:
+Please cite the use of X-EISD as:
 
 
     (1) James Lincoff, Mickael Krzeminski, Mojtaba Haghighatlari, Joao Teixeira, Gregory Neal-Gomes, Claudu Gardinaru, Julie Forman-Kay, Teresa Head-Gordon, arXiv:1912.12582, 2019
