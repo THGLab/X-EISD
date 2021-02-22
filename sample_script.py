@@ -41,9 +41,9 @@ if __name__ == '__main__':
     # run_mode: all
     if run_mode == 'all':
         if opt_type == 'mc':
-            abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/all_mode/opt_%s_b%s"%(structure,str(opt_type), str(beta))
+            abs_output = "local/newrun_2021/%s/all_mode/opt_%s_b%s"%(structure,str(opt_type), str(beta))
         else:
-            abs_output = "local/newrun_2020/new_prop_errors2/positive_mc/%s/all_mode/opt_%s"%(structure,str(opt_type))
+            abs_output = "local/newrun_2021/%s/all_mode/opt_%s"%(structure,str(opt_type))
 
         if not os.path.exists(abs_output):
             os.makedirs(abs_output)
