@@ -29,7 +29,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
         struct_found = False
         while not struct_found:
             new_index = np.random.randint(0, num_structs, 1)[0]
-            if new_index != popped_structure:
+            if new_index != popped_structure and new_index not in indices:
                 indices.append(new_index)
                 struct_found = True
 
@@ -247,9 +247,10 @@ def main(exp_data, bc_data, pre_indices=None, ens_size=100, epochs=250, mode='al
         ens_size = pre_indices.shape[1]
 
     for it in range(epochs):
-        # random selection with replacement
+        # random selection without replacement
         if pre_indices is None:
-            indices = np.random.randint(0, pool_size, ens_size)   # shape: (100,)
+            # indices = np.random.randint(0, pool_size, ens_size)   # shape: (100,)
+            indices = np.random.choice(np.arange(pool_size), ens_size, replace=False)
         else:
             indices = pre_indices[it]
 
