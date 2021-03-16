@@ -26,7 +26,7 @@ def ensemble_scorer(property, bc, data_path='data', exp_indices=None):
         path to the data directory in the root directory of this repository.
 
     exp_indices: list, default = None
-        list of indices of experimental data to include.
+        list of indices of experimental and back-calculated data to include.
 
     Returns
     -------
@@ -37,12 +37,15 @@ def ensemble_scorer(property, bc, data_path='data', exp_indices=None):
     exp_data = read_data(filenames['exp'], mode='exp')
     bc_data = read_data(filenames['ensemble'], mode='ensemble')
 
-    bc_data[property].data = pd.DataFrame(bc)
-
     if exp_indices is not None:
+        bc_data[property].data = pd.DataFrame(bc[:,exp_indices])
+
         exp_df = exp_data[property].data
         exp_df = exp_df.iloc[exp_indices, :]
         exp_data[property].data = exp_df
+
+    else:
+        bc_data[property].data = pd.DataFrame(bc)
 
     indices = np.arange(len(bc))
 
