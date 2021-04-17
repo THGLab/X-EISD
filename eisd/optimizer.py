@@ -35,7 +35,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # SAXS
         if flags['saxs']:
-            restraint_SSE_SAXS, new_score_SAXS, new_SAXS_vals = saxs_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_SAXS, new_score_SAXS, new_SAXS_vals, _ = saxs_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_SAXS_vals, popped_structure,
                                                                                        new_index)
         else:
@@ -43,7 +43,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # CS
         if flags['cs']:
-            restraint_SSE_CS, new_score_CS, new_shift_vals = cs_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_CS, new_score_CS, new_shift_vals, _ = cs_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_shift_vals, popped_structure,
                                                                                        new_index)
         else:
@@ -52,7 +52,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # FRET
         if flags['fret']:
-            restraint_SSE_FRET, new_score_FRET, new_FRET_val = fret_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_FRET, new_score_FRET, new_FRET_val, _ = fret_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_FRET_val, popped_structure,
                                                                                        new_index)
         else:
@@ -60,7 +60,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # JC
         if flags['jc']:
-            restraint_SSE_JC, new_score_JC, new_alpha_vals, jcoup_vals = jc_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_JC, new_score_JC, new_alpha_vals, jcoup_vals, _ = jc_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_alpha_vals, popped_structure,
                                                                                        new_index)
         else:
@@ -68,7 +68,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # NOE
         if flags['noe']:
-            restraint_SSE_NOE, new_score_NOEs, new_dist_vals_NOE = noe_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_NOE, new_score_NOEs, new_dist_vals_NOE, _ = noe_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_dist_vals_NOE, popped_structure,
                                                                                        new_index)
         else:
@@ -77,7 +77,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # PRE
         if flags['pre']:
-            restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE = pre_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_PRE, new_score_PREs, new_dist_vals_PRE, _ = pre_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_dist_vals_PRE, popped_structure,
                                                                                        new_index)
         else:
@@ -86,7 +86,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # RDC
         if flags['rdc']:
-            restraint_SSE_RDC, new_score_RDCs, new_RDC_vals = rdc_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_RDC, new_score_RDCs, new_RDC_vals, _ = rdc_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_RDC_vals, popped_structure,
                                                                                        new_index)
         else:
@@ -95,7 +95,7 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
 
         # RH
         if flags['rh']:
-            restraint_SSE_RH, new_score_RH, new_RH_val = rh_optimization_ensemble(exp_data, bc_data, None,
+            restraint_SSE_RH, new_score_RH, new_RH_val, _ = rh_optimization_ensemble(exp_data, bc_data, None,
                                                                                        old_RH_val, popped_structure,
                                                                                        new_index)
         else:
@@ -199,7 +199,8 @@ def maximize_score_SAXS(exp_data, bc_data, ens_size, indices, num_structs, flags
     return old_score_SAXS, new_SSE_SAXS, old_score_CS, new_SSE_CS, old_score_FRET, new_SSE_FRET, old_score_JC, new_SSE_JC, old_score_NOEs, new_SSE_NOE, old_score_PREs, new_SSE_PRE, old_score_RDCs, new_SSE_RDC, old_score_RH, new_SSE_RH, accepted, indices, jcoup_vals
 
 
-def main(exp_data, bc_data, pre_indices=None, ens_size=100, epochs=250, mode='all', beta=0.0, opt_type=None, output_dir=None, verbose=False):
+def main(exp_data, bc_data, pre_indices=None, ens_size=100,
+         epochs=250, mode='all', beta=0.0, opt_type=None, output_dir=None, verbose=False):
     """
 
     Parameters
@@ -256,49 +257,49 @@ def main(exp_data, bc_data, pre_indices=None, ens_size=100, epochs=250, mode='al
 
         # SAXS optimization on ensemble
         if flags['saxs']:
-            sse_saxs, total_score_saxs, bc_saxs = saxs_optimization_ensemble(exp_data, bc_data, indices)
+            sse_saxs, total_score_saxs, bc_saxs, _ = saxs_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_saxs, total_score_saxs, bc_saxs = [0, 0, 0]
 
         # CS optimization on ensemble
         if flags['cs']:
-            sse_cs, total_score_cs, bc_cs = cs_optimization_ensemble(exp_data, bc_data, indices)
+            sse_cs, total_score_cs, bc_cs, _ = cs_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_cs, total_score_cs, bc_cs = [0, 0, 0]
 
         # FRET optimization on ensemble
         if flags['fret']:
-            sse_fret, total_score_fret, bc_fret = fret_optimization_ensemble(exp_data, bc_data, indices)
+            sse_fret, total_score_fret, bc_fret, _ = fret_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_fret, total_score_fret, bc_fret = [0, 0, 0]
 
         # JC optimization on ensemble
         if flags['jc']:
-            sse_jc, total_score_jc, bc_alpha_vals_jc, best_jcoups  = jc_optimization_ensemble(exp_data, bc_data, indices)
+            sse_jc, total_score_jc, bc_alpha_vals_jc, best_jcoups, _  = jc_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_jc, total_score_jc, bc_alpha_vals_jc, best_jcoups = [0, 0, 0, [0]]
 
         # NOEs optimization on ensemble
         if flags['noe']:
-            sse_noe, total_score_noe, bc_dist_vals_noe = noe_optimization_ensemble(exp_data, bc_data, indices)
+            sse_noe, total_score_noe, bc_dist_vals_noe, _ = noe_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_noe, total_score_noe, bc_dist_vals_noe = [0, 0, 0]
 
         # PREs optimization on ensemble
         if flags['pre']:
-            sse_pre, total_score_pre, bc_pre  = pre_optimization_ensemble(exp_data, bc_data, indices)
+            sse_pre, total_score_pre, bc_pre, _  = pre_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_pre, total_score_pre, bc_pre = [0, 0, 0]
 
         # RDCs optimization on ensemble
         if flags['rdc']:
-            sse_rdc, total_score_rdc, bc_rdc  = rdc_optimization_ensemble(exp_data, bc_data, indices)
+            sse_rdc, total_score_rdc, bc_rdc, _  = rdc_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_rdc, total_score_rdc, bc_rdc = [0, 0, 0]
 
         # RH optimization on ensemble
         if flags['rh']:
-            sse_rh, total_score_rh, bc_rh  = rh_optimization_ensemble(exp_data, bc_data, indices)
+            sse_rh, total_score_rh, bc_rh, _  = rh_optimization_ensemble(exp_data, bc_data, indices)
         else:
             sse_rh, total_score_rh, bc_rh = [0, 0, 0]
 
