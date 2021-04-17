@@ -44,7 +44,7 @@ def saxs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped
     sse_saxs = np.sum((exp_saxs - bc_saxs) ** 2.0)
     total_score_saxs = np.sum(f)
 
-    return sse_saxs, total_score_saxs, bc_saxs#{i+1:bc_saxs[i] for i in range(len(bc_saxs))}
+    return sse_saxs, total_score_saxs, bc_saxs, f#{i+1:bc_saxs[i] for i in range(len(bc_saxs))}
 
 
 def cs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
@@ -68,7 +68,7 @@ def cs_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
     sse = np.sum((exp_cs - bc_cs) ** 2.0)
     total_score = np.sum(f)
 
-    return sse, total_score, bc_cs#{i+1:bc_cs[i] for i in range(len(bc_cs))}
+    return sse, total_score, bc_cs, f#{i+1:bc_cs[i] for i in range(len(bc_cs))}
 
 
 def fret_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
@@ -92,7 +92,7 @@ def fret_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped
     sse = np.sum((exp - bc) ** 2.0)
     total_score = np.sum(f)
 
-    return sse, total_score, bc[0]
+    return sse, total_score, bc[0], f
 
 
 def vect_calc_opt_params_jc(alpha1, alpha2, exp_j, exp_sig, mus, sigs):
@@ -172,7 +172,7 @@ def jc_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
     total_score = np.sum(f, axis=0)
     jcoup_vals = list(opt_params[:,0] * bc_alpha2 + opt_params[:,1] * bc_alpha1 + opt_params[:,2])
 
-    return sse, total_score, [bc_alpha1, bc_alpha2], jcoup_vals
+    return sse, total_score, [bc_alpha1, bc_alpha2], jcoup_vals, f
 
 
 def noe_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
@@ -207,7 +207,7 @@ def noe_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_
     sse = np.sum((exp_distance - avg_distance) ** 2.0, axis=0)
     total_score = np.sum(f)
 
-    return sse, total_score, avg_distance#{i+1:avg_distance[i] for i in range(len(avg_distance))}
+    return sse, total_score, avg_distance, f#{i+1:avg_distance[i] for i in range(len(avg_distance))}
 
 
 def pre_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
@@ -234,7 +234,7 @@ def pre_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_
     sse = np.sum((exp_distance - avg_distance) ** 2.0, axis=0)
     total_score = np.sum(f)
 
-    return sse, total_score, avg_distance#{i+1:avg_distance[i] for i in range(len(avg_distance))}
+    return sse, total_score, avg_distance, f#{i+1:avg_distance[i] for i in range(len(avg_distance))}
 
 
 def rdc_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
@@ -256,7 +256,7 @@ def rdc_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_
     sse = np.sum((exp - bc) ** 2.0, axis=0)
     total_score = np.sum(f)
 
-    return sse, total_score, bc#{i+1:bc[i] for i in range(len(bc))}
+    return sse, total_score, bc, f#{i+1:bc[i] for i in range(len(bc))}
 
 
 def rh_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_structure=None, new_index=None):
@@ -280,4 +280,4 @@ def rh_optimization_ensemble(exp_data, bc_data, indices, old_vals=None, popped_s
     sse = np.sum((exp - bc) ** 2.0)
     total_score = np.sum(f)
 
-    return sse, total_score, bc[0]
+    return sse, total_score, bc[0], f
